@@ -66,5 +66,3 @@ Alternatively, you can contact us via e-mail:
 ```http
 Marco Omainska: marcoomainska _at_ g.ecc.u-tokyo.ac.jp
 ```
-
-[DT]:https://gitlab.com/FJT_Lab/research/digitwin.git
