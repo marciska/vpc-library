@@ -17,7 +17,7 @@
 %
 % ------------- BEGIN CODE -------------
 
-fprintf('Loading core VPC library...\n')
+fprintf('Loading core VPC-Library...\n')
 
 % add library root folder
 libDir = fileparts(mfilename('fullpath'));
@@ -28,10 +28,6 @@ dirs = ["core", "templates"];
 for d = dirs
     addpath(genpath(fullfile(libDir,d)))
 end
-clear d dirs libDir
-
-% init gpml library
-run('gpml/startup.m')
 
 % clear workspace variables
 clear d dirs libDir mydir

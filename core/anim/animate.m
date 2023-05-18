@@ -307,7 +307,19 @@ end
 % plot initial patch
 rigid = cell(1,n_rigid);
 for i_rigid = 1:n_rigid+n_rigid_est
-    rigid{i_rigid} = patch(ax,'Faces',rigid_design{i_rigid}.faces,'Vertices',rigid_vert{i_rigid}(:,:,1),'FaceVertexCData',rigid_design{i_rigid}.color,'FaceColor','interp','FaceAlpha',rigid_design{i_rigid}.alpha);
+    linestyle = '-';
+    if rigid_design{i_rigid}.edgewidth == 0
+        rigid_design{i_rigid}.edgewidth = 1;
+        linestyle = 'none';
+    end
+    rigid{i_rigid} = patch(ax,...
+        'Faces',rigid_design{i_rigid}.faces,...
+        'Vertices',rigid_vert{i_rigid}(:,:,1),...
+        'FaceVertexCData',rigid_design{i_rigid}.color,...
+        'FaceColor','interp',...
+        'FaceAlpha',rigid_design{i_rigid}.alpha,...
+        'LineWidth',rigid_design{i_rigid}.edgewidth,...
+        'LineStyle',linestyle);
 end
 
 % keep all plots
@@ -526,7 +538,7 @@ end
 
 function ret = containsData(simdata, field)
 fields = simdata.who;
-ret = any(contains(fields,field));
+ret = any(matches(fields,field));
 end
 
 function vert = propagateVertices(vertices, gw)

@@ -16,6 +16,7 @@ classdef agentdesign
                                                             -.5  -.3   .5;
                                                               0   .7    0]
         alpha (1,1) double {mustBeInRange(alpha,0,1)} = 1;
+        edgewidth (1,1) double {mustBeNonnegative, mustBeFinite} = 1;
         show_trajectory {mustBeMember(show_trajectory,{'off','on'})} = 'off';
         trajectory_color = "inherit";
         trajectory_style string = '-';
@@ -42,20 +43,35 @@ classdef agentdesign
             
             % Process scheme on first argument
             scheme = 'default';
-            expected_schemes = {'default', 'target', 'estimate', 'agent'};
-            if nargin >=1 && any(validatestring(varargin{1},expected_schemes))
+            start_idx = 1;
+            expected_schemes = {'default', 'target', 'estimate', 'agent', 'sphere'};
+            if nargin >=1 && any(strcmp(varargin{1},expected_schemes))
                 scheme = varargin{1};
+                start_idx = start_idx + 1;
             end
             switch scheme
                 case 'target'
                     this.color = hsv(size(this.vertices,1));
-                    this.alpha = 1;
+                    this.edgewidth = 0;
                 case 'estimate'
                     this.color = ones(size(this.vertices,1),1).*[0.4660 0.6740 0.1880];
                     this.alpha = .5;
                 case 'agent'
                     this.color = ones(size(this.vertices,1),1).*[0 0.4470 0.7410];
-                    this.alpha = 1;
+                case 'sphere'
+                    [x, y, z] = sphere(20);
+                    f = figure('Visible', 'off');
+                    ax = axes(f);
+                    h = surf(ax,x,y,z);
+                    [faces,vertices,~] = surf2patch(h);
+                    close(f);
+                    this.vertices = vertices;
+                    this.faces = faces;
+                    % this.color = hsv(size(this.vertices,1));
+                    this.color = ones(size(this.vertices,1),1).*[0.8863 0.5843 0.4706];
+                    this.edgewidth = 0;
+                otherwise
+                    this.color = [0 0.4470 0.7410];
             end
             
             % Parse
@@ -65,11 +81,12 @@ classdef agentdesign
             addParameter(p,'blocksize',this.blocksize);
             addParameter(p,'color',this.color);
             addParameter(p,'alpha',this.alpha);
+            addParameter(p,'edgewidth',this.edgewidth);
             addParameter(p,'show_trajectory',this.show_trajectory);
             addParameter(p,'trajectory_color',this.trajectory_color);
             addParameter(p,'trajectory_style',this.trajectory_style);
             addParameter(p,'trajectory_width',this.trajectory_width);
-            parse(p,varargin{2:end})
+            parse(p,varargin{start_idx:end})
             
             % Set properties
             this.vertices = p.Results.vertices;
@@ -78,16 +95,23 @@ classdef agentdesign
             switch scheme
                 case 'target'
                     this.color = hsv(size(this.vertices,1));
-                    this.alpha = 1;
                 case 'estimate'
                     this.color = ones(size(this.vertices,1),1).*[0.4660 0.6740 0.1880];
                     this.alpha = .5;
                 case 'agent'
                     this.color = ones(size(this.vertices,1),1).*[0 0.4470 0.7410];
-                    this.alpha = 1;
+                otherwise
+                    this.color = [0 0.4470 0.7410];
             end
-            this.color = p.Results.color;
+            if any(size(p.Results.color,1) == [1 size(this.vertices,1)])
+                if size(p.Results.color,1) == 1
+                    this.color = ones(size(this.vertices,1),1).*p.Results.color;
+                else
+                    this.color = p.Results.color;
+                end
+            end
             this.alpha = p.Results.alpha;
+            this.edgewidth = p.Results.edgewidth;
             this.show_trajectory = p.Results.show_trajectory;
             this.trajectory_color = p.Results.trajectory_color;
             this.trajectory_style = p.Results.trajectory_style;
@@ -110,7 +134,7 @@ classdef agentdesign
             if size(color,1) == 1
                 color = repmat(color, size(this.vertices,1), 1);
             end
-            assert(size(color,1) == size(this.color,1),'Mismatch in vertices and colors! First specify vertices, then the matching color.');
+            assert(size(color,1) == size(this.vertices,1),'Mismatch in vertices and colors! First specify vertices, then the matching color.');
             this.color_ = color;
         end
         function color = get.color(this)
@@ -123,6 +147,10 @@ classdef agentdesign
         
         function this = set.alpha(this,alpha)
             this.alpha = alpha;
+        end
+
+        function this = set.edgewidth(this,edgewidth)
+            this.edgewidth = edgewidth;
         end
         
         function this = set.show_trajectory(this,show_trajectory)

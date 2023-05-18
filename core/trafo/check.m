@@ -1,59 +1,79 @@
-function g_check = check(g) %#codegen
-%CHECK returns check-transform of pose g
+function gv = check(g) %#codegen
+%%CHECK returns vectorized form of homogeneous representation g.
+%%In other words, g = [p xi*theta] is returned.
 %
-% Detailed Explanation:
-%   none
-%
-% -----------
+% Syntax:   GV = CHECK(G)
 %
 % Inputs:
-%   - g: homogeneous representation / pose [size 4x4]
+%
+%   - G: homogeneous representation / pose matrix [size 4x4]
 %
 % Outputs:
-%   - g_check: vector [size 6]
 %
-% Example commands:
-%   g_check = check(eye(4));
+%   - GVEC: vector [size 6]
 %
 %
-% Editor:
-%   OMAINSKA Marco - Doctoral Student, Cybernetics
-%       <marcoomainska@g.ecc.u-tokyo.ac.jp>
-% Review:
-%   YAMAUCHI Junya - Assistant Professor
-%       <junya_yamauchi@ipc.i.u-tokyo.ac.jp>
-%
-% Property of: Fujita Lab, University of Tokyo, 2021
-% e-mail: marcoomainska@g.ecc.u-tokyo.ac.jp
+%   Editor: OMAINSKA Marco - Doctoral Student, Cybernetics
+%               <marcoomainska@g.ecc.u-tokyo.ac.jp>
+% Property of: Fujita-Yamauchi Lab, The University of Tokyo, March 2021
 % Website: https://www.scl.ipc.i.u-tokyo.ac.jp
-% March 2021, Last modified: 2021-MAR-09
-%
+
 %------------- BEGIN CODE --------------
 
 if ndims(g) == 3
     m = size(g,3);
-    g_check = coder.nullcopy(zeros(m,6));
+    gv = coder.nullcopy(zeros(m,6));
     % Check-transform all g
     for i=1:m
-        g_check(i,:) = check_(g(:,:,i));
+        gv(i,:) = check_(g(:,:,i));
     end
 else
     % Check-transform g
-    g_check = check_(g);
+    gv = check_(g);
 end
 
 %-------------- END CODE ---------------
 end
 
-function g_check = check_(g) % internal check transform function
+function gv = check_(g) %#codegen
+%%CHECK_ internal helper function for CHECK function.
+%%Returns g = [p xi*theta].
+%%See also CHECK.
+%
+% Syntax:   GV = CHECK_(G)
+%
+% Inputs:
+%
+%   - G: homogeneous representation / pose matrix [size 4x4]
+%
+% Outputs:
+%
+%   - GVEC: vector [size 6]
+%
+%
+%   Editor: OMAINSKA Marco - Doctoral Student, Cybernetics
+%               <marcoomainska@g.ecc.u-tokyo.ac.jp>
+% Property of: Fujita-Yamauchi Lab, The University of Tokyo, March 2021
+% Website: https://www.scl.ipc.i.u-tokyo.ac.jp
+
+%------------- BEGIN CODE --------------
 
 % Extract position & orientation from g
 [R,p] = splitpose(g);
 
-% Take inverse-relation of exponential rotation matrix exp{xiwedge*theta}
+% Inverse-relation of exponential rotation matrix exp{xiwedge*theta}
+% BUG: the following line has an issue when rot == pi. In practice, this
+% will rarily create an issue because the numerics is never exactly pi in
+% our simulation. Nevertheless, we should switch to 'rotm2axang' since it
+% considers this corner case. Problem is, that rotm2axang creates some
+% simulink errors about variable signals... we'll solve this at a later
+% version of the VPC library
 xitheta = vee(logR(R));
+% axang = rotm2axang(R); % axang = [xi, theta]
+% xitheta = axang(1:3).*axang(4);
 
 % Form vector
-g_check = [p(:)' xitheta(:)'];
+gv = [p(:)' xitheta(:)'];
 
+%-------------- END CODE ---------------
 end
